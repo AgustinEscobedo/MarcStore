@@ -154,10 +154,9 @@ class AuthController extends Controller
             $request->validate([
                 'id' => 'required',
                 'name' => 'required|min:3|max:100',
-                'email' => 'required|email|unique:users,email',
+                'email' => 'required|email',
                 'password' => 'required|min:6',
                 'rol' => 'required|in:1,2,3',
-                'foto_perfil' => 'required|image|mimes:png,jpg,jpeg|max:10240'
             ]);
             // DEVOVLER STATUS EN 401, o como error
             $user = User::where('id', $request->id)->first();
@@ -171,9 +170,9 @@ class AuthController extends Controller
             $user->name = $request->name;
             $user->email = $request->email;
             $user->password = Hash::make($request->password);
-            $image = $request->file('foto_perfil');
-            $imageData = file_get_contents($image->getRealPath());
-            $user->foto_perfil = $imageData;
+            // $image = $request->file('foto_perfil');
+            // $imageData = file_get_contents($image->getRealPath());
+            // $user->foto_perfil = $imageData;
             $user->rol = $request->rol;
 
             $user->update();
