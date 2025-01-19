@@ -118,7 +118,7 @@ class ProductosController extends Controller
     {
         try {
             $request->validate([
-                'id_producto' => 'required|min:10'
+                'id_producto' => 'required'
             ]);
             $producto = Productos::where('id_producto', $request->id_producto)->first();
             if (!$producto) {
