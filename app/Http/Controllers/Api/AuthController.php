@@ -153,7 +153,7 @@ class AuthController extends Controller
         try {
             // Validar que el ID del usuario sea obligatorio y exista
             $request->validate([
-                'id' => 'required|exists:users,id', // Asegura que el usuario exista
+                'id_usuario' => 'required|exists:users,id', // Asegura que el usuario exista
                 'name' => 'nullable|min:3|max:100',
                 'email' => 'nullable|email',
                 'password' => 'nullable|min:6', // La contraseña es opcional
@@ -162,7 +162,7 @@ class AuthController extends Controller
             ]);
 
             // Buscar el usuario por ID
-            $user = User::find($request->id);
+            $user = User::find($request->id_usuario);
 
             if (!$user) {
                 return response()->json([
