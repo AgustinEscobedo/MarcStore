@@ -122,9 +122,9 @@ class AuthController extends Controller
     {
         try {
             $request->validate([
-                'id' => 'required'
+                'id_usuario' => 'required'
             ]);
-            $usuario = User::where('id', $request->id)->first();
+            $usuario = User::where('id', $request->id_usuario)->first();
             if (!$usuario) {
                 return response()->json([
                     "message" => "Usuario no encontrado"

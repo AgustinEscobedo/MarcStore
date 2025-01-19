@@ -29,7 +29,7 @@ class ProductosController extends Controller
         try {
             $request->validate([
                 'nombre_producto' => 'required',
-                'codigo_barras' => 'required|min:10',
+                'codigo_barras' => 'required|min:10|unique:productos',
                 'categoria' => 'required',
                 'precio_unitario' => 'required|numeric|min:0',
                 'precio_venta' => 'required|numeric|min:0',
