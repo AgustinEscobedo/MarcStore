@@ -21,7 +21,7 @@ class AuthController extends Controller
             $request->validate([
                 'name' => 'required|min:3|max:100',
                 'email' => 'required|email',
-                'password' => 'required|confirmed|min:6',
+                'password' => 'required|min:6',
                 'rol' => 'required|in:1,2,3',
                 'foto_perfil' => 'nullable|image|mimes:png,jpg,jpeg|max:10240'
             ]);
@@ -151,15 +151,18 @@ class AuthController extends Controller
     public function updateUser(Request $request)
     {
         try {
+            // Validar que el ID del usuario sea obligatorio y exista
             $request->validate([
-                'id' => 'required',
-                'name' => 'required|min:3|max:100',
-                'email' => 'required|email',
-                'password' => 'required|min:6',
-                'rol' => 'required|in:1,2,3',
+                'id' => 'required|exists:users,id', // Asegura que el usuario exista
+                'name' => 'nullable|min:3|max:100',
+                'email' => 'nullable|email',
+                'password' => 'nullable|min:6', // La contraseña es opcional
+                'rol' => 'nullable|in:1,2,3',
+                'foto_perfil' => 'nullable|image|mimes:png,jpg,jpeg|max:10240' // Validación de la imagen
             ]);
-            // DEVOVLER STATUS EN 401, o como error
-            $user = User::where('id', $request->id)->first();
+
+            // Buscar el usuario por ID
+            $user = User::find($request->id);
 
             if (!$user) {
                 return response()->json([
@@ -167,15 +170,21 @@ class AuthController extends Controller
                 ], Response::HTTP_NOT_FOUND);
             }
 
-            $user->name = $request->name;
-            $user->email = $request->email;
-            $user->password = Hash::make($request->password);
-            // $image = $request->file('foto_perfil');
-            // $imageData = file_get_contents($image->getRealPath());
-            // $user->foto_perfil = $imageData;
-            $user->rol = $request->rol;
-
-            $user->update();
+            // Actualizar los campos que están presentes en la solicitud
+            if ($request->filled('name')) {
+                $user->name = $request->name;
+            }
+            if ($request->filled('email')) {
+                $user->email = $request->email;
+            }
+            if ($request->filled('password')) {
+                $user->password = Hash::make($request->password);
+            }
+            if ($request->filled('rol')) {
+                $user->rol = $request->rol;
+            }
+            // Guardar los cambios
+            $user->save();
 
             return response()->json([
                 "message" => "Usuario actualizado correctamente",
@@ -193,7 +202,6 @@ class AuthController extends Controller
             ], 500);
         }
     }
-
 
 
 

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\ProductosController;
+use App\Http\Controllers\VentasController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
@@ -21,6 +22,7 @@ Route::group(['middleware'=>['auth:sanctum']],function(){
     Route::post('newProducto',[ProductosController::class,'newProducto']);
     Route::post('deleteUser',[AuthController::class,'deleteUser']);
     Route::post('updateUser',[AuthController::class,'updateUser']);
+    Route::post('registrarVenta',[VentasController::class,'registrarVenta']);
 });
 
 // Route::get('/userProfile', [AuthController::class, 'userProfile']);
