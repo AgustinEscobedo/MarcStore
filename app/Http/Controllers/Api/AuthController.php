@@ -23,7 +23,6 @@ class AuthController extends Controller
                 'email' => 'required|email',
                 'password' => 'required|min:6',
                 'rol' => 'required|in:1,2,3',
-                'foto_perfil' => 'nullable|image|mimes:png,jpg,jpeg|max:10240'
             ]);
             try {
                 $user = new User();
@@ -31,34 +30,7 @@ class AuthController extends Controller
                 $user->email = $request->email;
                 $user->password = Hash::make($request->password);
                 $user->rol = $request->rol;
-                if ($request->hasFile('foto_perfil')) {
-                    $user->foto_perfil = file_get_contents($request->file('foto_perfil')->getRealPath());
-                } else {
-                    $defaultImagePath = public_path('img/perfil.png');
-                    if (file_exists($defaultImagePath)) {
-                        $user->foto_perfil = file_get_contents($defaultImagePath);
-                    } else {
-                        return response()->json(['error' => 'Imagen por defecto no encontrada.'], 500);
-                    }
-                }
                 $user->save();
-                // $base64Image = base64_encode($user->foto_perfil);
-                // $responseUser = [
-                //     'id' => $user->id,
-                //     'name' => $user->name,
-                //     'email' => $user->email,
-                //     'rol' => $user->rol,
-                //     'foto_perfil' => 'data:image/png;base64,' . $base64Image,
-                // ];
-                try {
-                    return response()->json([
-                        'message' => 'Usuario creado exitosamente'
-                    ], Response::HTTP_CREATED);
-                } catch (\Throwable $th) {
-                    return response()->json([
-                        "Error_imagen" => $th
-                    ]);
-                }
             } catch (\Throwable $th) {
                 return response()->json([
                     "status" => $th
@@ -89,13 +61,11 @@ class AuthController extends Controller
                 $user = Auth::user();
                 $token = $user->createToken('token')->plainTextToken;
                 $cookie = cookie('cookie_token', $token, 60 * 24);
-                $base64Image = base64_encode($user->foto_perfil);
                 $responseUser = [
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
-                    'rol' => $user->rol,
-                    'foto_perfil' => 'data:image/png;base64,' . $base64Image,
+                    'rol' => $user->rol
                 ];
                 return response([
                     "token" => $token,
@@ -157,8 +127,7 @@ class AuthController extends Controller
                 'name' => 'nullable|min:3|max:100',
                 'email' => 'nullable|email',
                 'password' => 'nullable|min:6', // La contraseña es opcional
-                'rol' => 'nullable|in:1,2,3',
-                'foto_perfil' => 'nullable|image|mimes:png,jpg,jpeg|max:10240' // Validación de la imagen
+                'rol' => 'nullable|in:1,2,3'
             ]);
 
             // Buscar el usuario por ID
@@ -208,19 +177,14 @@ class AuthController extends Controller
             // Obtener todos los usuarios
             $users = User::all();
 
+            // Verificar si hay usuarios en la base de datos
             if ($users->isEmpty()) {
                 return response()->json([
                     "message" => "No se encontraron usuarios"
                 ], Response::HTTP_NOT_FOUND);
             }
 
-            // Sanitizar los datos para evitar problemas de codificación
-            $users = $users->map(function ($user) {
-                return collect($user)->map(function ($value) {
-                    return is_string($value) ? mb_convert_encoding($value, 'UTF-8', 'UTF-8') : $value;
-                });
-            });
-
+            // Retornar la lista de usuarios
             return response()->json([
                 "message" => "Usuarios obtenidos correctamente",
                 "users" => $users
