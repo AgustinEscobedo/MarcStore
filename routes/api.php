@@ -23,7 +23,7 @@ Route::group(['middleware'=>['auth:sanctum']],function(){
     Route::post('deleteUser',[AuthController::class,'deleteUser']);
     Route::post('updateUser',[AuthController::class,'updateUser']);
     Route::post('registrarVenta',[VentasController::class,'registrarVenta']);
-    Route::post('getAllUsers',[AuthController::class,'getAllUsers']);
+    Route::get('getAllUsers',[AuthController::class,'getAllUsers']);
 });
 
 // Route::get('/userProfile', [AuthController::class, 'userProfile']);

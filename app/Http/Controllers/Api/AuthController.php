@@ -208,14 +208,19 @@ class AuthController extends Controller
             // Obtener todos los usuarios
             $users = User::all();
 
-            // Verificar si hay usuarios en la base de datos
             if ($users->isEmpty()) {
                 return response()->json([
                     "message" => "No se encontraron usuarios"
                 ], Response::HTTP_NOT_FOUND);
             }
 
-            // Retornar la lista de usuarios
+            // Sanitizar los datos para evitar problemas de codificación
+            $users = $users->map(function ($user) {
+                return collect($user)->map(function ($value) {
+                    return is_string($value) ? mb_convert_encoding($value, 'UTF-8', 'UTF-8') : $value;
+                });
+            });
+
             return response()->json([
                 "message" => "Usuarios obtenidos correctamente",
                 "users" => $users
