@@ -202,6 +202,33 @@ class AuthController extends Controller
             ], 500);
         }
     }
+    public function getAllUsers()
+    {
+        try {
+            // Obtener todos los usuarios
+            $users = User::all();
+
+            // Verificar si hay usuarios en la base de datos
+            if ($users->isEmpty()) {
+                return response()->json([
+                    "message" => "No se encontraron usuarios"
+                ], Response::HTTP_NOT_FOUND);
+            }
+
+            // Retornar la lista de usuarios
+            return response()->json([
+                "message" => "Usuarios obtenidos correctamente",
+                "users" => $users
+            ], Response::HTTP_OK);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                "status" => 500,
+                "message" => "Error al obtener los usuarios",
+                "error" => $e->getMessage()
+            ], 500);
+        }
+    }
 
 
 
