@@ -303,10 +303,10 @@ class VentasController extends Controller
             ], 500);
         }
     }
-    public function getAllVentas()
+    public function obtenerTodasLasVentasConDetallesConGanancias()
     {
         try {
-            // Obtener todas las ventas con todos los campos
+            // Obtener todas las ventas
             $ventas = Ventas::all();
 
             // Validar si no existen ventas
@@ -317,7 +317,11 @@ class VentasController extends Controller
                 ], 404);
             }
 
-            // Inicializar un arreglo para almacenar las ventas con sus detalles
+            // Inicializar variables para almacenar ganancias generales
+            $gananciaBrutaGeneral = 0;
+            $gananciaNetaGeneral = 0;
+
+            // Arreglo para almacenar todas las ventas con sus detalles y ganancias
             $ventasConDetalles = [];
 
             // Recorrer todas las ventas
@@ -325,28 +329,59 @@ class VentasController extends Controller
                 // Obtener los detalles de la venta actual
                 $detalles_venta = venta_detalle::where('id_grupo_venta', $venta->id_ventas)->get();
 
-                // Agregar el nombre del producto a cada detalle
+                // Inicializar ganancias para este grupo de venta
+                $gananciaBrutaVenta = 0;
+                $gananciaNetaVenta = 0;
+
+                // Agregar el nombre del producto a cada detalle y calcular ganancias
                 foreach ($detalles_venta as $detalle) {
                     $producto = Productos::find($detalle->id_producto);
+
+                    // Agregar el nombre del producto
                     $detalle->nombre_producto = $producto ? $producto->nombre_producto : null;
+
+                    if ($producto) {
+                        // Calcular la ganancia bruta y neta para este detalle
+                        $subtotalVenta = $detalle->cantidad * $detalle->precio_unitario;
+                        $subtotalCosto = $detalle->cantidad * $producto->precio_unitario;
+
+                        $gananciaBrutaDetalle = $subtotalVenta - $subtotalCosto; // Ganancia bruta
+                        $gananciaNetaDetalle = $gananciaBrutaDetalle; // Puedes restar costos adicionales aquí si aplican
+
+                        // Sumar al total de la venta
+                        $gananciaBrutaVenta += $gananciaBrutaDetalle;
+                        $gananciaNetaVenta += $gananciaNetaDetalle;
+
+                        // Agregar los cálculos al detalle
+                        $detalle->ganancia_bruta = $gananciaBrutaDetalle;
+                        $detalle->ganancia_neta = $gananciaNetaDetalle;
+                    }
                 }
 
                 // Obtener el nombre del usuario asociado a la venta
                 $usuario = User::find($venta->id_usuario);
                 $venta->nombre_usuario = $usuario ? $usuario->name : null;
 
-                // Agregar la venta y sus detalles al arreglo
+                // Agregar la venta y sus detalles al arreglo, incluyendo las ganancias
                 $ventasConDetalles[] = [
                     "venta" => $venta,
-                    "detalles_venta" => $detalles_venta
+                    "detalles_venta" => $detalles_venta,
+                    "ganancia_bruta" => $gananciaBrutaVenta,
+                    "ganancia_neta" => $gananciaNetaVenta
                 ];
+
+                // Sumar al total general
+                $gananciaBrutaGeneral += $gananciaBrutaVenta;
+                $gananciaNetaGeneral += $gananciaNetaVenta;
             }
 
-            // Responder con todas las ventas y sus detalles
+            // Responder con todas las ventas, detalles y ganancias generales
             return response()->json([
                 "status" => 200,
-                "message" => "Ventas y detalles encontrados.",
-                "ventas" => $ventasConDetalles
+                "message" => "Ventas, detalles y ganancias calculados correctamente.",
+                "ventas" => $ventasConDetalles,
+                "ganancia_bruta_general" => $gananciaBrutaGeneral,
+                "ganancia_neta_general" => $gananciaNetaGeneral
             ]);
         } catch (\Exception $e) {
             // En caso de error
@@ -356,6 +391,7 @@ class VentasController extends Controller
             ], 500);
         }
     }
+
 
 
 }
