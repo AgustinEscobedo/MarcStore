@@ -303,6 +303,59 @@ class VentasController extends Controller
             ], 500);
         }
     }
+    public function getAllVentas()
+    {
+        try {
+            // Obtener todas las ventas con todos los campos
+            $ventas = Ventas::all();
+
+            // Validar si no existen ventas
+            if ($ventas->isEmpty()) {
+                return response()->json([
+                    "status" => 404,
+                    "message" => "No hay ventas registradas."
+                ], 404);
+            }
+
+            // Inicializar un arreglo para almacenar las ventas con sus detalles
+            $ventasConDetalles = [];
+
+            // Recorrer todas las ventas
+            foreach ($ventas as $venta) {
+                // Obtener los detalles de la venta actual
+                $detalles_venta = venta_detalle::where('id_grupo_venta', $venta->id_ventas)->get();
+
+                // Agregar el nombre del producto a cada detalle
+                foreach ($detalles_venta as $detalle) {
+                    $producto = Productos::find($detalle->id_producto);
+                    $detalle->nombre_producto = $producto ? $producto->nombre_producto : null;
+                }
+
+                // Obtener el nombre del usuario asociado a la venta
+                $usuario = User::find($venta->id_usuario);
+                $venta->nombre_usuario = $usuario ? $usuario->name : null;
+
+                // Agregar la venta y sus detalles al arreglo
+                $ventasConDetalles[] = [
+                    "venta" => $venta,
+                    "detalles_venta" => $detalles_venta
+                ];
+            }
+
+            // Responder con todas las ventas y sus detalles
+            return response()->json([
+                "status" => 200,
+                "message" => "Ventas y detalles encontrados.",
+                "ventas" => $ventasConDetalles
+            ]);
+        } catch (\Exception $e) {
+            // En caso de error
+            return response()->json([
+                "status" => 500,
+                "message" => $e->getMessage()
+            ], 500);
+        }
+    }
 
 
 }

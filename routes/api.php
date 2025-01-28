@@ -33,6 +33,7 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('editarVenta', [VentasController::class, 'editarVenta']);
     Route::post('obtenerVentasConDetalles', [VentasController::class, 'obtenerVentasConDetalles']);
     Route::post('eliminarVenta', [VentasController::class, 'eliminarVenta']);
+    Route::get('getAllVentas', [VentasController::class, 'getAllVentas']);
 
 });
 
