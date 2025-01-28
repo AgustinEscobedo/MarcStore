@@ -306,82 +306,71 @@ class VentasController extends Controller
     public function getAllVentas()
     {
         try {
-            // Obtener todas las ventas
-            $ventas = Ventas::all();
+            // Obtener todas las ventas con sus detalles y productos relacionados
+            $ventas = Ventas::with('detallesVenta.producto')->get();
 
-            // Validar si no existen ventas
-            if ($ventas->isEmpty()) {
-                return response()->json([
-                    "status" => 404,
-                    "message" => "No hay ventas registradas."
-                ], 404);
-            }
+            $resultado = $ventas->map(function ($venta) {
+                $gananciaBruta = 0; // Acumula la ganancia total por venta
+                $gananciaNeta = 0;  // Acumula la ganancia neta por venta
 
-            $gananciaBrutaGeneral = 0;
-            $gananciaNetaGeneral = 0;
-            $ventasConDetalles = [];
-
-            foreach ($ventas as $venta) {
-                $detalles_venta = venta_detalle::where('id_grupo_venta', $venta->id_ventas)->get();
-
-
-                $gananciaBrutaVenta = 0;
-                $gananciaNetaVenta = 0;
-                foreach ($detalles_venta as $detalle) {
-                    $producto = Productos::find($detalle->id_producto);
-                    $detalle->nombre_producto = $producto ? $producto->nombre_producto : null;
+                // Recorrer los detalles de cada venta
+                $detalles = $venta->detallesVenta->map(function ($detalle) use (&$gananciaBruta, &$gananciaNeta) {
+                    $producto = $detalle->producto; // Relación al modelo Productos
 
                     if ($producto) {
-                        // Calcular la ganancia bruta y neta para este detalle
-                        $subtotalVenta = $detalle->cantidad * $producto->precio_venta;
-                        $subtotalCosto = $detalle->cantidad * $producto->precio_unitario;
+                        $costoTotal = $producto->precio_unitario * $detalle->cantidad;
+                        $subtotal = $detalle->cantidad * $producto->precio_venta;
 
-                        $gananciaBrutaDetalle = $subtotalVenta - $subtotalCosto; // Ganancia bruta
-                        $gananciaNetaDetalle = $gananciaBrutaDetalle; // Puedes restar costos adicionales aquí si aplican
+                        // Calcular ganancias
+                        $gananciaBruta += $subtotal;
+                        $gananciaNeta += ($subtotal - $costoTotal);
 
-                        // Sumar al total de la venta
-                        $gananciaBrutaVenta += $gananciaBrutaDetalle;
-                        $gananciaNetaVenta += $gananciaNetaDetalle;
-
-                        // Agregar los cálculos al detalle
-                        $detalle->ganancia_bruta = $gananciaBrutaDetalle;
-                        $detalle->ganancia_neta = $gananciaNetaDetalle;
+                        // Añadir datos al detalle
+                        $detalle->nombre_producto = $producto->nombre_producto;
+                        $detalle->precio_unitario = $producto->precio_unitario;
+                        $detalle->precio_venta = $producto->precio_venta;
+                        $detalle->costo_total = $costoTotal;
                     }
-                }
 
-                // Obtener el nombre del usuario asociado a la venta
-                $usuario = User::find($venta->id_usuario);
-                $venta->nombre_usuario = $usuario ? $usuario->name : null;
+                    return $detalle;
+                });
 
-                // Agregar la venta y sus detalles al arreglo, incluyendo las ganancias
-                $ventasConDetalles[] = [
-                    "venta" => $venta,
-                    "detalles_venta" => $detalles_venta,
-                    "ganancia_bruta" => $gananciaBrutaVenta,
-                    "ganancia_neta" => $gananciaNetaVenta
+                // Agregar los cálculos a cada venta
+                return [
+                    "venta" => [
+                        "id_ventas" => $venta->id_ventas,
+                        "id_usuario" => $venta->id_usuario,
+                        "fecha_venta" => $venta->fecha_venta,
+                        "total_venta" => $venta->total_venta,
+                        "nombre_usuario" => $venta->usuario->name ?? null,
+                        "ganancia_bruta" => $gananciaBruta,
+                        "ganancia_neta" => $gananciaNeta
+                    ],
+                    "detalles_venta" => $detalles
                 ];
+            });
 
-                // Sumar al total general
-                $gananciaBrutaGeneral += $gananciaBrutaVenta;
-                $gananciaNetaGeneral += $gananciaNetaVenta;
-            }
+            // Calcular las ganancias totales (general)
+            $gananciaBrutaTotal = $resultado->sum(fn($venta) => $venta['venta']['ganancia_bruta']);
+            $gananciaNetaTotal = $resultado->sum(fn($venta) => $venta['venta']['ganancia_neta']);
 
-            // Responder con todas las ventas, detalles y ganancias generales
             return response()->json([
                 "status" => 200,
-                "message" => "Ventas, detalles y ganancias calculados correctamente.",
-                "ventas" => $ventasConDetalles,
-                "ganancia_bruta_general" => $gananciaBrutaGeneral,
-                "ganancia_neta_general" => $gananciaNetaGeneral
-            ]);
+                "message" => "Ventas y detalles obtenidos exitosamente.",
+                "ventas" => $resultado,
+                "totales" => [
+                    "ganancia_bruta_total" => $gananciaBrutaTotal,
+                    "ganancia_neta_total" => $gananciaNetaTotal
+                ]
+            ], 200);
         } catch (\Exception $e) {
-            // En caso de error
             return response()->json([
                 "status" => 500,
-                "message" => $e->getMessage()
+                "message" => "Error al obtener las ventas: " . $e->getMessage()
             ], 500);
         }
     }
+
 
 
 
