@@ -303,7 +303,7 @@ class VentasController extends Controller
             ], 500);
         }
     }
-    public function obtenerTodasLasVentasConDetallesConGanancias()
+    public function getAllVentas()
     {
         try {
             // Obtener todas las ventas
