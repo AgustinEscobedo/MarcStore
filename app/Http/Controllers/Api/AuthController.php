@@ -211,7 +211,7 @@ class AuthController extends Controller
             $usuario = User::find($request->id_usuario);
 
             // Actualizar el estado del usuario
-            $usuario->estado = $request->activo;
+            $usuario->activo = $request->activo;
             $usuario->save();
 
             // Determinar el mensaje según el valor de "activo"
