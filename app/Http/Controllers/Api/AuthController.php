@@ -198,11 +198,44 @@ class AuthController extends Controller
             ], 500);
         }
     }
+    public function suspendUsers(Request $request)
+    {
+        try {
+            // Validar los datos recibidos
+            $request->validate([
+                'id_usuario' => 'required|exists:users,id', // Asegura que el usuario exista en la base de datos
+                'activo' => 'required|boolean', // Asegura que activo sea 0 o 1
+            ]);
 
+            // Buscar el usuario
+            $usuario = User::find($request->id_usuario);
 
+            // Actualizar el estado del usuario
+            $usuario->estado = $request->activo;
+            $usuario->save();
 
+            // Determinar el mensaje según el valor de "activo"
+            $message = $request->activo == 1
+                ? "Usuario activado correctamente"
+                : "Usuario suspendido correctamente";
 
+            return response()->json([
+                "message" => $message,
+            ], Response::HTTP_OK);
 
+        } catch (ValidationException $e) {
+            return response()->json([
+                "status" => 422,
+                "errors" => $e->errors()
+            ], 422);
+        } catch (\Exception $e) {
+            return response()->json([
+                "status" => 500,
+                "message" => "Error al actualizar el estado del usuario",
+                "error" => $e->getMessage()
+            ], 500);
+        }
+    }
 
 
 
