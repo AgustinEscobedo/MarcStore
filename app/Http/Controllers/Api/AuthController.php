@@ -175,7 +175,7 @@ class AuthController extends Controller
     {
         try {
             // Obtener todos los usuarios
-            $users = User::all();
+            $users = User::where('activo', 1)->get();
 
             // Verificar si hay usuarios en la base de datos
             if ($users->isEmpty()) {
