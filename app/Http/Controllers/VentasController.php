@@ -342,7 +342,7 @@ class VentasController extends Controller
 
                     if ($producto) {
                         // Calcular la ganancia bruta y neta para este detalle
-                        $subtotalVenta = $detalle->cantidad * $detalle->precio_unitario;
+                        $subtotalVenta = $detalle->cantidad * $detalle->precio_venta;
                         $subtotalCosto = $detalle->cantidad * $producto->precio_unitario;
 
                         $gananciaBrutaDetalle = $subtotalVenta - $subtotalCosto; // Ganancia bruta
