@@ -317,32 +317,23 @@ class VentasController extends Controller
                 ], 404);
             }
 
-            // Inicializar variables para almacenar ganancias generales
             $gananciaBrutaGeneral = 0;
             $gananciaNetaGeneral = 0;
-
-            // Arreglo para almacenar todas las ventas con sus detalles y ganancias
             $ventasConDetalles = [];
 
-            // Recorrer todas las ventas
             foreach ($ventas as $venta) {
-                // Obtener los detalles de la venta actual
                 $detalles_venta = venta_detalle::where('id_grupo_venta', $venta->id_ventas)->get();
 
-                // Inicializar ganancias para este grupo de venta
+
                 $gananciaBrutaVenta = 0;
                 $gananciaNetaVenta = 0;
-
-                // Agregar el nombre del producto a cada detalle y calcular ganancias
                 foreach ($detalles_venta as $detalle) {
                     $producto = Productos::find($detalle->id_producto);
-
-                    // Agregar el nombre del producto
                     $detalle->nombre_producto = $producto ? $producto->nombre_producto : null;
 
                     if ($producto) {
                         // Calcular la ganancia bruta y neta para este detalle
-                        $subtotalVenta = $detalle->cantidad * $detalle->precio_venta;
+                        $subtotalVenta = $detalle->cantidad * $producto->precio_venta;
                         $subtotalCosto = $detalle->cantidad * $producto->precio_unitario;
 
                         $gananciaBrutaDetalle = $subtotalVenta - $subtotalCosto; // Ganancia bruta
