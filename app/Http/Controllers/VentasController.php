@@ -309,39 +309,39 @@ class VentasController extends Controller
             // Obtener fechas de inicio y fin desde la solicitud
             $fechaInicio = $request->input('fecha_inicio');
             $fechaFin = $request->input('fecha_fin');
-    
+
             // Consulta base con Eager Loading
             $ventasQuery = Ventas::with(['usuario', 'ventaDetalles.producto'])
                 ->where('total_venta', '>', 0);
-    
+
             // Aplicar filtro de rango de fechas si se proporcionan
             if ($fechaInicio && $fechaFin) {
                 $ventasQuery->whereBetween('fecha_venta', [$fechaInicio, $fechaFin]);
             }
-    
+
             // Obtener las ventas filtradas
             $ventas = $ventasQuery->get();
-    
+
             $ventas_grupo = [];
             $inversion_total = 0;
             $total_venta_bruto = 0;
             $total_venta_neto = 0;
-    
+
             foreach ($ventas as $venta) {
                 $ventas_detalles = [];
                 $inversion_grupo = 0;
                 $total_neto_grupo = 0;
-    
+
                 foreach ($venta->ventaDetalles as $detalle) {
                     // Si la cantidad es 0, omitir este detalle
                     if ($detalle->cantidad <= 0) {
                         continue;
                     }
-    
+
                     $producto = $detalle->producto;
                     $inversion = $producto->precio_unitario * $detalle->cantidad;
                     $total_neto = $detalle->subtotal - $inversion;
-    
+
                     $ventas_detalles[] = [
                         'nombre_producto' => $producto->nombre_producto,
                         'precio_unitario' => $producto->precio_venta,
@@ -350,16 +350,16 @@ class VentasController extends Controller
                         'venta' => $detalle->subtotal,
                         'total_neto_producto' => $total_neto
                     ];
-    
+
                     $inversion_grupo += $inversion;
                     $total_neto_grupo += $total_neto;
                 }
-    
+
                 // Si no hay detalles válidos, omitir la venta
                 if (empty($ventas_detalles)) {
                     continue;
                 }
-    
+
                 $ventas_grupo[] = [
                     'id_ventas' => $venta->id_ventas,
                     'nombre_usuario' => $venta->usuario->name,
@@ -369,12 +369,12 @@ class VentasController extends Controller
                     'total_neto_grupo' => $total_neto_grupo,
                     'detalles' => $ventas_detalles
                 ];
-    
+
                 $inversion_total += $inversion_grupo;
                 $total_venta_bruto += $venta->total_venta;
                 $total_venta_neto += $total_neto_grupo;
             }
-    
+
             return response()->json([
                 "status" => 200,
                 "message" => "Ventas y detalles obtenidos exitosamente.",
