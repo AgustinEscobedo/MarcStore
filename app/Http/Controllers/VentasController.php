@@ -303,65 +303,85 @@ class VentasController extends Controller
             ], 500);
         }
     }
-    public function getAllVentas()
+    public function getAllVentas(Request $request)
     {
         try {
-            // Obtener todas las ventas con sus detalles y productos relacionados
-            $ventas = Ventas::with('detallesVenta.producto')->get();
-
-            $resultado = $ventas->map(function ($venta) {
-                $gananciaBruta = 0; // Acumula la ganancia total por venta
-                $gananciaNeta = 0;  // Acumula la ganancia neta por venta
-
-                // Recorrer los detalles de cada venta
-                $detalles = $venta->detallesVenta->map(function ($detalle) use (&$gananciaBruta, &$gananciaNeta) {
-                    $producto = $detalle->producto; // Relación al modelo Productos
-
-                    if ($producto) {
-                        $costoTotal = $producto->precio_unitario * $detalle->cantidad;
-                        $subtotal = $detalle->cantidad * $producto->precio_venta;
-
-                        // Calcular ganancias
-                        $gananciaBruta += $subtotal;
-                        $gananciaNeta += ($subtotal - $costoTotal);
-
-                        // Añadir datos al detalle
-                        $detalle->nombre_producto = $producto->nombre_producto;
-                        $detalle->precio_unitario = $producto->precio_unitario;
-                        $detalle->precio_venta = $producto->precio_venta;
-                        $detalle->costo_total = $costoTotal;
+            // Obtener fechas de inicio y fin desde la solicitud
+            $fechaInicio = $request->input('fecha_inicio');
+            $fechaFin = $request->input('fecha_fin');
+    
+            // Consulta base con Eager Loading
+            $ventasQuery = Ventas::with(['usuario', 'ventaDetalles.producto'])
+                ->where('total_venta', '>', 0);
+    
+            // Aplicar filtro de rango de fechas si se proporcionan
+            if ($fechaInicio && $fechaFin) {
+                $ventasQuery->whereBetween('fecha_venta', [$fechaInicio, $fechaFin]);
+            }
+    
+            // Obtener las ventas filtradas
+            $ventas = $ventasQuery->get();
+    
+            $ventas_grupo = [];
+            $inversion_total = 0;
+            $total_venta_bruto = 0;
+            $total_venta_neto = 0;
+    
+            foreach ($ventas as $venta) {
+                $ventas_detalles = [];
+                $inversion_grupo = 0;
+                $total_neto_grupo = 0;
+    
+                foreach ($venta->ventaDetalles as $detalle) {
+                    // Si la cantidad es 0, omitir este detalle
+                    if ($detalle->cantidad <= 0) {
+                        continue;
                     }
-
-                    return $detalle;
-                });
-
-                // Agregar los cálculos a cada venta
-                return [
-                    "venta" => [
-                        "id_ventas" => $venta->id_ventas,
-                        "id_usuario" => $venta->id_usuario,
-                        "fecha_venta" => $venta->fecha_venta,
-                        "total_venta" => $venta->total_venta,
-                        "nombre_usuario" => $venta->usuario->name ?? null,
-                        "ganancia_bruta" => $gananciaBruta,
-                        "ganancia_neta" => $gananciaNeta
-                    ],
-                    "detalles_venta" => $detalles
+    
+                    $producto = $detalle->producto;
+                    $inversion = $producto->precio_unitario * $detalle->cantidad;
+                    $total_neto = $detalle->subtotal - $inversion;
+    
+                    $ventas_detalles[] = [
+                        'nombre_producto' => $producto->nombre_producto,
+                        'precio_unitario' => $producto->precio_venta,
+                        'cantidad' => $detalle->cantidad,
+                        'inversion' => $inversion,
+                        'venta' => $detalle->subtotal,
+                        'total_neto_producto' => $total_neto
+                    ];
+    
+                    $inversion_grupo += $inversion;
+                    $total_neto_grupo += $total_neto;
+                }
+    
+                // Si no hay detalles válidos, omitir la venta
+                if (empty($ventas_detalles)) {
+                    continue;
+                }
+    
+                $ventas_grupo[] = [
+                    'id_ventas' => $venta->id_ventas,
+                    'nombre_usuario' => $venta->usuario->name,
+                    'fecha_venta' => $venta->fecha_venta,
+                    'inversion_grupo' => $inversion_grupo,
+                    'total_bruto_grupo' => $venta->total_venta,
+                    'total_neto_grupo' => $total_neto_grupo,
+                    'detalles' => $ventas_detalles
                 ];
-            });
-
-            // Calcular las ganancias totales (general)
-            $gananciaBrutaTotal = $resultado->sum(fn($venta) => $venta['venta']['ganancia_bruta']);
-            $gananciaNetaTotal = $resultado->sum(fn($venta) => $venta['venta']['ganancia_neta']);
-
+    
+                $inversion_total += $inversion_grupo;
+                $total_venta_bruto += $venta->total_venta;
+                $total_venta_neto += $total_neto_grupo;
+            }
+    
             return response()->json([
                 "status" => 200,
                 "message" => "Ventas y detalles obtenidos exitosamente.",
-                "ventas" => $resultado,
-                "totales" => [
-                    "ganancia_bruta_total" => $gananciaBrutaTotal,
-                    "ganancia_neta_total" => $gananciaNetaTotal
-                ]
+                "inversion_total" => $inversion_total,
+                "total_venta" => $total_venta_bruto,
+                "ganancia" => $total_venta_neto,
+                "ventas" => $ventas_grupo
             ], 200);
         } catch (\Exception $e) {
             return response()->json([
@@ -370,8 +390,5 @@ class VentasController extends Controller
             ], 500);
         }
     }
-
-
-
 
 }

@@ -18,4 +18,8 @@ class venta_detalle extends Model
         'precio_unitario',
         'subtotal'
     ];
+    public function producto()
+    {
+        return $this->belongsTo(Productos::class, 'id_producto');
+    }
 }

@@ -17,4 +17,15 @@ class Ventas extends Model
         'fecha_venta',
         'total_venta',
     ];
+    // Relación con el usuario (vendedor)
+    public function usuario()
+    {
+        return $this->belongsTo(User::class, 'id_usuario');
+    }
+
+    // Relación con los detalles de la venta
+    public function ventaDetalles()
+    {
+        return $this->hasMany(venta_detalle::class, 'id_grupo_venta');
+    }
 }
