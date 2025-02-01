@@ -12,54 +12,87 @@ class ProductosController extends Controller
     public function getAllProductos()
     {
         try {
-            $productos = Productos::where('estado', 1)->get();
+            // Obtener productos activos (estado = 1) y cargar la relación con el proveedor
+            $productos = Productos::where('estado', 1)
+                ->with('proveedor:id_proveedor,nombre_proveedor') // Cargar solo los campos necesarios del proveedor
+                ->get();
+
+            // Formatear la respuesta
+            $productosFormateados = $productos->map(function ($producto) {
+                return [
+                    'id_producto' => $producto->id_producto,
+                    'nombre_producto' => $producto->nombre_producto,
+                    'codigo_barras' => $producto->codigo_barras,
+                    'categoria' => $producto->categoria,
+                    'precio_unitario' => $producto->precio_unitario,
+                    'precio_venta' => $producto->precio_venta,
+                    'stock' => $producto->stock,
+                    'estado' => $producto->estado,
+                    'proveedor' => [
+                        'id_proveedor' => $producto->proveedor->id_proveedor,
+                        'nombre_proveedor' => $producto->proveedor->nombre_proveedor
+                    ]
+                ];
+            });
+
             return response()->json([
-                "data" => $productos
+                "data" => $productosFormateados
             ], Response::HTTP_OK);
-        } catch (ValidationException $e) {
+
+        } catch (\Exception $e) {
             return response()->json([
-                "status" => 422,
-                "errors" => $e->errors()
-            ], 422);
+                "status" => 500,
+                "message" => "Error al obtener los productos",
+                "error" => $e->getMessage()
+            ], 500);
         }
     }
 
     public function newProducto(Request $request)
     {
+        $request->validate([
+            'nombre_producto' => 'required|string|max:255',
+            'codigo_barras' => 'required|min:10|unique:productos,codigo_barras',
+            'categoria' => 'required|string|max:255',
+            'precio_unitario' => 'required|numeric|min:0',
+            'precio_venta' => 'required|numeric|min:0',
+            'stock' => 'required|integer|min:0',
+            'id_proveedor' => 'required|exists:proveedores,id_proveedor',
+            'estado' => 'required|boolean'
+        ]);
+
         try {
-            $request->validate([
-                'nombre_producto' => 'required',
-                'codigo_barras' => 'required|min:10|unique:productos',
-                'categoria' => 'required',
-                'precio_unitario' => 'required|numeric|min:0',
-                'precio_venta' => 'required|numeric|min:0',
-                'stock' => 'required|numeric|min:0',
-                'estado' => 'required'
+            $producto = Productos::create([
+                'nombre_producto' => $request->nombre_producto,
+                'codigo_barras' => $request->codigo_barras,
+                'categoria' => $request->categoria,
+                'precio_unitario' => $request->precio_unitario,
+                'precio_venta' => $request->precio_venta,
+                'stock' => $request->stock,
+                'id_proveedor' => $request->id_proveedor,
+                'estado' => $request->estado
             ]);
-            $producto = new Productos();
-            $producto->nombre_producto = $request->nombre_producto;
-            $producto->codigo_barras = $request->codigo_barras;
-            $producto->categoria = $request->categoria;
-            $producto->precio_unitario = $request->precio_unitario;
-            $producto->precio_venta = $request->precio_venta;
-            $producto->stock = $request->stock;
-            $producto->estado = $request->estado;
-            $producto->save();
+
+            // Respuesta exitosa
             return response()->json([
                 "message" => "Producto creado correctamente",
                 "data" => $producto
-            ], Response::HTTP_OK);
+            ], Response::HTTP_CREATED); // Usar HTTP_CREATED (201) para creación exitosa
+
         } catch (ValidationException $e) {
+            // Manejo de errores de validación
             return response()->json([
-                "status" => 422,
+                "status" => Response::HTTP_UNPROCESSABLE_ENTITY, // 422
                 "errors" => $e->errors()
-            ], 422);
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+
         } catch (\Exception $e) {
+            // Manejo de errores inesperados
             return response()->json([
-                "status" => 500,
+                "status" => Response::HTTP_INTERNAL_SERVER_ERROR, // 500
                 "message" => "Error al crear el producto",
                 "error" => $e->getMessage()
-            ], 500);
+            ], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
     public function updateProducto(Request $request)
@@ -72,6 +105,7 @@ class ProductosController extends Controller
                 'categoria' => 'nullable',
                 'precio_unitario' => 'nullable|numeric|min:0',
                 'precio_venta' => 'nullable|numeric|min:0',
+                'id_proveedor' => 'nullable|exists:proveedores,id_proveedor',
                 'stock' => 'nullable|numeric|min:0',
                 'estado' => 'nullable'
             ]);
@@ -90,6 +124,7 @@ class ProductosController extends Controller
                 'nombre_producto',
                 'codigo_barras',
                 'categoria',
+                'id_proveedor',
                 'precio_unitario',
                 'precio_venta',
                 'stock',
@@ -144,4 +179,5 @@ class ProductosController extends Controller
         }
 
     }
+
 }

@@ -5,91 +5,122 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Auth;
+use Exception;
 use Illuminate\Validation\ValidationException;
 use Hash;
 use Closure;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Http\Request;
 use PhpParser\Node\Expr\ClosureUse;
+use Carbon\Carbon;
 use Symfony\Component\HttpFoundation\Response;
 class AuthController extends Controller
 {
 
     public function register(Request $request)
     {
+        if (!$request->user()->tokenCan('*')) {
+            return response()->json(['message' => 'No tienes permisos para esta acción'], 403);
+        }
+        $request->validate([
+            'name' => 'required|min:3|max:100',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|min:6',
+            'rol' => 'required|in:1,2,3',
+        ]);
         try {
-            $request->validate([
-                'name' => 'required|min:3|max:100',
-                'email' => 'required|email',
-                'password' => 'required|min:6',
-                'rol' => 'required|in:1,2,3',
+            $user = User::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'rol' => $request->rol,
             ]);
-            try {
-                $user = new User();
-                $user->name = $request->name;
-                $user->email = $request->email;
-                $user->password = Hash::make($request->password);
-                $user->rol = $request->rol;
-                $user->save();
-            } catch (\Throwable $th) {
-                return response()->json([
-                    "status" => $th
-                ]);
-            }
-        } catch (ValidationException $e) {
-            return response()->json([
-                "status" => 422,
-                "errors" => $e->errors()
-            ], 422);
-        } catch (\Throwable $th) {
+
 
             return response()->json([
-                "error" => "Something went wrong",
-                "details" => $th->getMessage()
+                'status' => 201,
+                'message' => 'Usuario registrado exitosamente',
+                'data' => $user
+            ], 201);
+        } catch (Exception $e) {
+            return response()->json([
+                'status' => 500,
+                'message' => 'Error al registrar el usuario',
             ], 500);
         }
 
     }
     public function login(Request $request)
     {
+        $credentials = $request->validate([
+            'email' => ['email', 'required'],
+            'password' => ['required']
+        ]);
+
         try {
-            $credentials = $request->validate([
-                'email' => ['email', 'required'],
-                'password' => ['required']
-            ]);
             if (Auth::attempt($credentials)) {
                 $user = Auth::user();
-                $token = $user->createToken('token')->plainTextToken;
-                $cookie = cookie('cookie_token', $token, 60 * 24);
+
+                if ($user->activo == 0) {
+                    return response([
+                        "message" => "Tu cuenta está suspendida, contacta con tu administrador"
+                    ], Response::HTTP_FORBIDDEN);
+                }
+
+                $permissions = User::$rolesPermissions[$user->rol];
+
+                $token = $user->createToken('token', $permissions, Carbon::now()->addDay())->plainTextToken;
+
+                $cookie = cookie('cookie_token', $token, 1440);
+
                 $responseUser = [
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
                     'rol' => $user->rol
                 ];
+
                 return response([
                     "token" => $token,
                     "userData" => $responseUser
-                ], Response::HTTP_OK)->withoutCookie($cookie);
+                ], Response::HTTP_OK)->withCookie($cookie);
             } else {
                 return response(["message" => "Credenciales incorrectas"], Response::HTTP_UNAUTHORIZED);
             }
-        } catch (\Illuminate\Validation\ValidationException $e) {
+        } catch (Exception $e) {
             return response()->json([
-                "status" => 422,
-                "errors" => $e->errors()
-            ], 422);
-        } catch (\Throwable $th) {
-
-            return response()->json([
-                "error" => "Something went wrong",
-                "details" => $th->getMessage()
+                'status' => 500,
+                'message' => 'Error al iniciar sesión',
             ], 500);
         }
     }
 
+    public function logout(Request $request)
+    {
+        try {
+            // Obtener el usuario autenticado y revocar su token
+            $user = Auth::user();
+            if ($user) {
+                $user->tokens()->delete(); // Elimina todos los tokens del usuario
+            }
+
+            // Devolver respuesta eliminando la cookie
+            return response([
+                "message" => "Sesión cerrada correctamente para el usuario {$user->name}"
+            ], Response::HTTP_OK)->withoutCookie('cookie_token');
+
+        } catch (Exception $e) {
+            return response()->json([
+                'status' => 500,
+                'message' => 'Error al cerrar sesión',
+            ], 500);
+        }
+    }
     public function deleteUser(Request $request)
     {
+        if (!$request->user()->tokenCan('*')) {
+            return response()->json(['message' => 'No tienes permisos para esta acción'], 403);
+        }
         try {
             $request->validate([
                 'id_usuario' => 'required'
@@ -120,59 +151,54 @@ class AuthController extends Controller
     }
     public function updateUser(Request $request)
     {
+        if (!$request->user()->tokenCan('*')) {
+            return response()->json(['message' => 'No tienes permisos para esta acción'], 403);
+        }
+
+        $request->validate([
+            'id' => 'required|exists:users,id', // Asegura que el usuario exista
+            'name' => 'sometimes|min:3|max:100',
+            'email' => 'sometimes|email|max:255|unique:users,email,' . $request->id . ',id',
+            'password' => 'sometimes|min:6', // La contraseña es opcional
+            "activo" => 'sometimes|in:0,1',
+            'rol' => 'sometimes|in:1,2,3'
+        ]);
+
         try {
-            // Validar que el ID del usuario sea obligatorio y exista
-            $request->validate([
-                'id_usuario' => 'required|exists:users,id', // Asegura que el usuario exista
-                'name' => 'nullable|min:3|max:100',
-                'email' => 'nullable|email',
-                'password' => 'nullable|min:6', // La contraseña es opcional
-                'rol' => 'nullable|in:1,2,3'
-            ]);
+            $user = User::findOrFail($request->id);
 
-            // Buscar el usuario por ID
-            $user = User::find($request->id_usuario);
-
-            if (!$user) {
-                return response()->json([
-                    "message" => "Usuario no encontrado"
-                ], Response::HTTP_NOT_FOUND);
-            }
-
-            // Actualizar los campos que están presentes en la solicitud
-            if ($request->filled('name')) {
-                $user->name = $request->name;
-            }
-            if ($request->filled('email')) {
-                $user->email = $request->email;
-            }
+            // Verificar si se está enviando una nueva contraseña
             if ($request->filled('password')) {
+                // Encriptar la contraseña si está presente
                 $user->password = Hash::make($request->password);
             }
-            if ($request->filled('rol')) {
-                $user->rol = $request->rol;
-            }
-            // Guardar los cambios
-            $user->save();
+
+            // Si no estamos actualizando la contraseña, eliminamos la clave de password
+            // del array para que no sea sobrescrita sin encriptar
+            $data = $request->except('password');
+
+            // Actualizar el resto de los campos (excepto la contraseña)
+            $user->update($data);
 
             return response()->json([
-                "message" => "Usuario actualizado correctamente",
-            ], Response::HTTP_OK);
+                'message' => 'Usuario actualizado correctamente',
+                'status' => 'ok'
+            ]);
         } catch (ValidationException $e) {
-            return response()->json([
-                "status" => 422,
-                "errors" => $e->errors()
-            ], 422);
+            return response()->json(['status' => 'error al actualizar usuario']);
         } catch (\Exception $e) {
             return response()->json([
-                "status" => 500,
-                "message" => "Error al actualizar el usuario",
-                "error" => $e->getMessage()
-            ], 500);
+                'status' => 'error',
+                'message' => 'Error al actualizar el usuario',
+            ]);
         }
     }
-    public function getAllUsers()
+
+    public function getAllUsers(Request $request)
     {
+        if (!$request->user()->tokenCan('*')) {
+            return response()->json(['message' => 'No tienes permisos para esta acción'], 403);
+        }
         try {
             // Obtener todos los usuarios
             $users = User::where('activo', 1)->get();
@@ -200,6 +226,9 @@ class AuthController extends Controller
     }
     public function suspendUsers(Request $request)
     {
+        if (!$request->user()->tokenCan('*')) {
+            return response()->json(['message' => 'No tienes permisos para esta acción'], 403);
+        }
         try {
             // Validar los datos recibidos
             $request->validate([

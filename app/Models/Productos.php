@@ -17,6 +17,12 @@ class Productos extends Model
         'precio_unitario',
         'precio_venta',
         'stock',
+        'id_proveedor',
         'estado'
     ];
+
+    public function proveedor()
+    {
+        return $this->belongsTo(proveedores::class, 'id_proveedor', 'id_proveedor');
+    }
 }

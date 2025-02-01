@@ -311,8 +311,15 @@ class VentasController extends Controller
             $fechaFin = $request->input('fecha_fin');
 
             // Consulta base con Eager Loading
-            $ventasQuery = Ventas::with(['usuario', 'ventaDetalles.producto'])
-                ->where('total_venta', '>', 0);
+            // $ventasQuery = Ventas::with(['usuario', 'ventaDetalles.producto'])
+            //     ->where('total_venta', '>', 0);
+
+            $ventasQuery = Ventas::with([
+                'usuario',
+                'ventaDetalles.producto' => function ($query) {
+                    $query->with('proveedor');
+                }
+            ])->where('total_venta', '>', 0);
 
             // Aplicar filtro de rango de fechas si se proporcionan
             if ($fechaInicio && $fechaFin) {
@@ -337,6 +344,8 @@ class VentasController extends Controller
                     if ($detalle->cantidad <= 0) {
                         continue;
                     }
+                    $producto = $detalle->producto;
+                    $proveedor = $producto->proveedor;
 
                     $producto = $detalle->producto;
                     $inversion = $producto->precio_unitario * $detalle->cantidad;
@@ -345,6 +354,8 @@ class VentasController extends Controller
                     $ventas_detalles[] = [
                         'nombre_producto' => $producto->nombre_producto,
                         'precio_unitario' => $producto->precio_venta,
+                        'id_proveedor' => $proveedor->id_proveedor ?? null,
+                        'nombre_proveedor' => $proveedor->nombre_proveedor ?? "Desconocido",
                         'cantidad' => $detalle->cantidad,
                         'inversion' => $inversion,
                         'venta' => $detalle->subtotal,
