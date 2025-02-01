@@ -3,7 +3,7 @@
 use App\Http\Controllers\ProductosController;
 use App\Http\Controllers\ProveedorController;
 use App\Http\Controllers\VentasController;
-use Illuminate\Http\Request;
+use App\Http\Controllers\RegistroController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
 // Route::get('/user', function (Request $request) {
@@ -43,6 +43,12 @@ Route::group(['middleware' => ['auth:sanctum']], function () {
     Route::post('updateProveedor', [ProveedorController::class, 'updateProveedor']);
     Route::get('getAllProveedores', [ProveedorController::class, 'getAllProveedores']);
 
+    //REGISTROS
+    Route::post('registrarEntradaSalida', [RegistroController::class, 'registrarEntradaSalida']);
+    Route::post('registrosUsuario', [RegistroController::class, 'obtenerRegistrosUsuario']);
+    Route::post('actualizarHoraRegistro', [RegistroController::class, 'actualizarHoraRegistro']);
+    Route::post('obtenerRegistrosPorFechaUsuario', [RegistroController::class, 'obtenerRegistrosPorFechaUsuario']);
+    Route::post('getAllRegistros', [RegistroController::class, 'obtenerTodosLosRegistros']);
 
 });
 
