@@ -78,9 +78,9 @@ class ProveedorController extends Controller
 
     public function getAllProveedores(Request $request)
     {
-        if (!$request->user()->tokenCan('*')) {
-            return response()->json(['message' => 'No tienes permisos para esta acción'], 403);
-        }
+        // if (!$request->user()->tokenCan('*')) {
+        //     return response()->json(['message' => 'No tienes permisos para esta acción'], 403);
+        // }
         try {
             $proveedores = proveedores::all();
             return response()->json(['status' => 'ok', 'data' => $proveedores]);
