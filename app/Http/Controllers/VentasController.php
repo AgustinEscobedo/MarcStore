@@ -311,8 +311,8 @@ class VentasController extends Controller
             $fechaFin = $request->input('fecha_fin');
 
             // Consulta base con Eager Loading
-            // $ventasQuery = Ventas::with(['usuario', 'ventaDetalles.producto'])
-            //     ->where('total_venta', '>', 0);
+            $ventasQuery = Ventas::with(['usuario', 'ventaDetalles.producto'])
+                ->where('total_venta', '>', 0);
 
             $ventasQuery = Ventas::with([
                 'usuario',
