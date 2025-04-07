@@ -1,11 +1,14 @@
 <?php
 
+use App\Http\Controllers\EmailController;
 use App\Http\Controllers\ProductosController;
 use App\Http\Controllers\ProveedorController;
 use App\Http\Controllers\VentasController;
 use App\Http\Controllers\RegistroController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\ServicioController;
+
 // Route::get('/user', function (Request $request) {
 //     return $request->user();
 // })->middleware('auth:sanctum');
@@ -13,12 +16,20 @@ use App\Http\Controllers\Api\AuthController;
 
 Route::post('login', [AuthController::class, 'login']);
 
+Route::post('/enviarCorreo', [EmailController::class, 'sendEmail']);
+
+Route::post('register', [AuthController::class, 'register']);
+
+Route::get('/getAllServicios', [ServicioController::class, 'index']);
+Route::post('/registerServicios', [ServicioController::class, 'store']);
+Route::post('/deleteServicios', [ServicioController::class, 'destroy']);
+
 Route::group(['middleware' => ['auth:sanctum']], function () {
 
     //USUARIO
     // Route::get('user-profile', [AuthController::class, 'userProfile']);
     Route::get('logout', [AuthController::class, 'logout']);
-    Route::post('register', [AuthController::class, 'register']);
+    // Route::post('register', [AuthController::class, 'register']);
     Route::post('deleteUser', [AuthController::class, 'deleteUser']);
     Route::post('updateUser', [AuthController::class, 'updateUser']);
     Route::post('suspendUsers', [AuthController::class, 'suspendUsers']);
