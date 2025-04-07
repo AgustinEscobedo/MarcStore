@@ -31,7 +31,6 @@ class ServicioController extends Controller
 
             return response()->json([
                 'message' => 'Servicio creado correctamente',
-                'servicio' => $servicio
             ], 201);
         } catch (\Exception $e) {
             return response()->json([
