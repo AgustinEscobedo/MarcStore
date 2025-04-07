@@ -28,9 +28,9 @@ class EmailController extends Controller
 
 
         try {
-            Mail::to($miCorreo)->send(new SendMailChucho($datosCorreo));
+            Mail::to($request->email)->send(new SendMailChucho($datosCorreo));
 
-            Mail::to($request->email)->send(new SendMailMe($datosCorreo));
+            Mail::to($miCorreo)->send(new SendMailMe($datosCorreo));
             
             return response()->json([
                 'success' => true,
