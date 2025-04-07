@@ -111,6 +111,7 @@
             <p>Hola,</p>
 
             <p>Has recibido un nuevo mensaje de <strong>{{ $datosCorreo['name'] }}</strong>.</p>
+            <p>Correo cliente:<strong>{{ $datosCorreo['email'] }}</strong></p>
 
             <div class="highlight">
                 <p><strong>Asunto:</strong> {{ $datosCorreo['asunto'] }}</p>
