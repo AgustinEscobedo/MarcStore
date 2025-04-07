@@ -15,16 +15,29 @@ class ServicioController extends Controller
     {
         $request->validate([
             'servicio' => 'required|string',
+            'descripcion' => 'required|string',
+            'caracteristicas' => 'required|array',
+            'caracteristicas.*' => 'string', 
+            'precio' => 'required|numeric',
         ]);
 
         try {
             $servicio = Servicio::create([
                 'servicio' => $request->servicio,
+                'descripcion' => $request->descripcion,
+                'caracteristicas' => json_encode($request->caracteristicas),
+                'precio' => $request->precio,
             ]);
 
-            return response()->json(['message' => 'Servicio creado correctamente', 'servicio' => $servicio], 201);
+            return response()->json([
+                'message' => 'Servicio creado correctamente',
+                'servicio' => $servicio
+            ], 201);
         } catch (\Exception $e) {
-            return response()->json(['message' => 'Error al crear el servicio', 'error' => $e->getMessage()], 500);
+            return response()->json([
+                'message' => 'Error al crear el servicio',
+                'error' => $e->getMessage()
+            ], 500);
         }
     }
 
