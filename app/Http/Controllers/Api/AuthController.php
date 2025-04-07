@@ -19,9 +19,9 @@ class AuthController extends Controller
 
     public function register(Request $request)
     {
-        if (!$request->user()->tokenCan('*')) {
-            return response()->json(['message' => 'No tienes permisos para esta acción'], 403);
-        }
+        // if (!$request->user()->tokenCan('*')) {
+        //     return response()->json(['message' => 'No tienes permisos para esta acción'], 403);
+        // }
         $request->validate([
             'name' => 'required|min:3|max:100',
             'email' => 'required|email|unique:users,email',
