@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bienvenido a HanaByte</title>
+    <title>Nuevo mensaje de cliente: {{ $datosCorreo['name'] }}</title>
     <style>
         /* Estilos principales */
         body {
@@ -64,18 +64,6 @@
             border-left: 4px solid #59b9c0;
         }
 
-        .button {
-            display: inline-block;
-            background-color: #379aa3;
-            color: white !important;
-            text-decoration: none;
-            padding: 12px 24px;
-            border-radius: 6px;
-            font-weight: bold;
-            margin: 20px 0;
-            text-align: center;
-        }
-
         .footer {
             background-color: #f8fafc;
             padding: 20px;
@@ -118,34 +106,29 @@
 
         <!-- Contenido principal -->
         <div class="content">
-            <h1>¡Bienvenido a la familia HanaByte!</h1>
+            <h1>Nuevo mensaje de cliente: {{ $datosCorreo['name'] }}</h1>
 
-            <p>Hola {{$datosCorreo['name']}},</p>
+            <p>Hola,</p>
 
-            <p>Hemos recibido su asunto: <strong>{{$datosCorreo['asunto']}}</strong>.</p>
-            <p>Nos encargaremos de atenderlo a la mayor brevedad posible y nos pondremos en contacto con usted en breve.</p>
-
-
-            <p>Es un honor para nosotros darte la bienvenida a HanaByte, donde creamos experiencias digitales que
-                florecen con elegancia y funcionalidad, como las flores de cerezo en primavera.</p>
+            <p>Has recibido un nuevo mensaje de <strong>{{ $datosCorreo['name'] }}</strong>.</p>
 
             <div class="highlight">
-                <p>En HanaByte, creemos en la <strong>belleza de lo simple</strong>, la <strong>fuerza de lo
-                        auténtico</strong> y el <strong>poder de las conexiones humanas</strong> a través de la
-                    tecnología.</p>
+                <p><strong>Asunto:</strong> {{ $datosCorreo['asunto'] }}</p>
             </div>
 
-            <p>Nuestro equipo está comprometido a cultivar soluciones digitales que se adapten perfectamente a tus
-                necesidades, con el mismo cuidado y atención que dedicaríamos a un jardín.</p>
+            <p>El cliente ha solicitado asistencia con el siguiente asunto. Es importante que respondas a esta consulta
+                a la mayor brevedad posible.</p>
 
-            <p>Estamos emocionados de comenzar este viaje contigo y ayudarte a hacer florecer tu presencia digital.</p>
+            <p>Recuerda que si necesitas más detalles o deseas responder directamente, puedes hacerlo desde tu bandeja
+                de entrada.</p>
+
+            <p>Estamos aquí para ayudarte a gestionar las solicitudes de nuestros clientes de manera eficiente.</p>
 
             <div style="text-align: center;">
-                <a href="https://hanabyte.vercel.app/" class="button">Explora tu nuevo espacio</a>
+                <a href="https://hanabyte.vercel.app/" class="button">Visita nuestra plataforma</a>
             </div>
 
-            <p>Si tienes alguna pregunta o necesitas ayuda, no dudes en responder a este correo. Estamos aquí para
-                ayudarte.</p>
+            <p>Gracias por tu compromiso en atender a nuestros clientes.</p>
 
             <p>Con cariño,</p>
             <p><strong>El equipo HanaByte</strong></p>

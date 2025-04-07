@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Mail\SendMailChucho;
+use App\Mail\SendMailMe;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Http;
@@ -23,12 +24,19 @@ class EmailController extends Controller
             'asunto' => $request->asunto ?? 'Confirmación de Recepción',
         ];
 
+        $miCorreo = 'agustinescobedovargas@gmail.com';
+
+
         try {
-            Mail::to($request->email)->send(new SendMailChucho($datosCorreo));
+            Mail::to($miCorreo)->send(new SendMailChucho($datosCorreo));
+
+            Mail::to($request->email)->send(new SendMailMe($datosCorreo));
+            
             return response()->json([
                 'success' => true,
                 'message' => 'Correo enviado correctamente',
             ], 200);
+        
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
