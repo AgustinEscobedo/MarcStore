@@ -17,7 +17,7 @@ class ServicioController extends Controller
             'servicio' => 'required|string',
             'descripcion' => 'required|string',
             'caracteristicas' => 'required|array',
-            'caracteristicas.*' => 'string', 
+            'caracteristicas.*' => 'string',
             'precio' => 'required|numeric',
         ]);
 
@@ -58,6 +58,36 @@ class ServicioController extends Controller
             return response()->json(['message' => 'Servicio eliminado correctamente']);
         } catch (\Exception $e) {
             return response()->json(['message' => 'Error al eliminar el servicio', 'error' => $e->getMessage()], 500);
+        }
+    }
+
+    public function update(Request $request)
+    {
+        $request->validate([
+            'id' => 'required|integer|exists:servicios,id',
+            'servicio' => 'sometimes|string',
+            'descripcion' => 'sometimes|string',
+            'caracteristicas' => 'sometimes|array',
+            'caracteristicas.*' => 'string',
+            'precio' => 'sometimes|numeric',
+        ]);
+
+        try {
+            $servicio = Servicio::findOrFail($request->id);
+
+            $data = $request->only(['servicio', 'descripcion', 'caracteristicas', 'precio']);
+
+            $servicio->update($data);
+
+            return response()->json([
+                'message' => 'Servicio actualizado correctamente',
+                'servicio' => $servicio
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'message' => 'Error al actualizar el servicio',
+                'error' => $e->getMessage()
+            ], 500);
         }
     }
 

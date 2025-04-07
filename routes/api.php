@@ -23,6 +23,7 @@ Route::post('register', [AuthController::class, 'register']);
 Route::get('/getAllServicios', [ServicioController::class, 'index']);
 Route::post('/registerServicios', [ServicioController::class, 'store']);
 Route::post('/deleteServicios', [ServicioController::class, 'destroy']);
+Route::post('/updateServicios', [ServicioController::class, 'update']);
 
 Route::group(['middleware' => ['auth:sanctum']], function () {
 
