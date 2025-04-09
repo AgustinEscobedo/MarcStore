@@ -20,7 +20,14 @@ class ServicioController extends Controller
             'caracteristicas.*' => 'string',
             'precio' => 'required|numeric',
         ]);
+        $caracteristicas = $request->caracteristicas;
 
+        if (is_string($caracteristicas)) {
+            $decoded = json_decode($caracteristicas, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                $caracteristicas = $decoded;
+            }
+        }
         try {
             $servicio = Servicio::create([
                 'servicio' => $request->servicio,
