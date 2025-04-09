@@ -22,17 +22,21 @@ class ServicioController extends Controller
         ]);
         $caracteristicas = $request->caracteristicas;
 
+        // Verificamos si ya viene como string (posiblemente JSON codificado)
         if (is_string($caracteristicas)) {
             $decoded = json_decode($caracteristicas, true);
             if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
                 $caracteristicas = $decoded;
+            } else {
+                // Si no es JSON válido, forzamos que sea array con un solo elemento
+                $caracteristicas = [$caracteristicas];
             }
         }
         try {
             $servicio = Servicio::create([
                 'servicio' => $request->servicio,
                 'descripcion' => $request->descripcion,
-                'caracteristicas' => json_encode($request->caracteristicas),
+                'caracteristicas' => json_encode($caracteristicas),
                 'precio' => $request->precio,
             ]);
 
