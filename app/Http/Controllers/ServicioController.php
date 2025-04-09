@@ -9,8 +9,20 @@ class ServicioController extends Controller
     public function index()
     {
         $servicios = Servicio::all();
+
+        $servicios = $servicios->map(function ($servicio) {
+            if (is_string($servicio->caracteristicas)) {
+                $decoded = json_decode($servicio->caracteristicas, true);
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    $servicio->caracteristicas = $decoded;
+                }
+            }
+            return $servicio;
+        });
+
         return response()->json($servicios);
     }
+
     public function store(Request $request)
     {
         $request->validate([
